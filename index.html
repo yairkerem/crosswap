@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Crosswap</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Swap tiles until every row and column holds 1 to 7. Unlimited puzzles, with a 10-second undo.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔀</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="icon-btn" id="btn-help" type="button" aria-label="How to play">?</button>
+    <h1>Crosswap</h1>
+    <button class="icon-btn" id="btn-stats" type="button" aria-label="Statistics">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 13h3v7H4zm6.5-9h3v16h-3zM17 9h3v11h-3z"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <div class="board" id="board" aria-label="Puzzle board"></div>
+
+    <div class="status">
+      <p class="swaps"><strong id="swaps-left">20</strong> <span id="swaps-label">swaps remaining</span></p>
+      <div class="stars" id="stars" aria-hidden="true"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn undo" id="btn-undo" type="button" disabled aria-keyshortcuts="Control+Z U">
+        <span class="undo-fill" id="undo-fill"></span>
+        <span class="undo-label">↶ Undo</span>
+        <span class="undo-time" id="undo-time"></span>
+      </button>
+      <button class="btn" id="btn-new" type="button">New puzzle</button>
+    </div>
+
+    <section class="result" id="result" hidden aria-live="polite">
+      <h2 id="result-title"></h2>
+      <p id="result-text"></p>
+      <button class="btn primary" id="btn-next" type="button">Play another</button>
+    </section>
+  </main>
+
+  <dialog id="help" aria-labelledby="help-title">
+    <div class="dialog-body">
+      <h2 id="help-title">How to play</h2>
+      <p>Swap tiles until every <strong>full row and column</strong> contains the numbers <strong>1 to 7</strong>, each exactly once.</p>
+      <ul>
+        <li>Drag a tile onto another to swap them, or tap one and then another.</li>
+        <li>Tiles turn <span class="chip">teal</span> when they're in the right place. Teal tiles are locked.</li>
+        <li>Orange tags show the <strong>sum</strong> of the two tiles they're joined to. A tag showing 10 that's joined to a 4 and one unknown tile means the unknown is 6.</li>
+        <li>You have <strong>20 swaps</strong>. Every puzzle can be solved in 15, and each swap you have left earns a ★.</li>
+        <li>Swapped the wrong tiles? Press <strong>Undo</strong> within <strong>10 seconds</strong> to reverse the swap and get it back. Shortcut: <kbd>Ctrl</kbd>+<kbd>Z</kbd> or <kbd>U</kbd>.</li>
+        <li>There's no daily limit, so play as many puzzles as you like.</li>
+      </ul>
+      <form method="dialog"><button class="btn primary" type="submit">Let's play</button></form>
+    </div>
+  </dialog>
+
+  <dialog id="stats" aria-labelledby="stats-title">
+    <div class="dialog-body">
+      <h2 id="stats-title">Statistics</h2>
+      <div id="stats-body"></div>
+      <form method="dialog"><button class="btn" type="submit">Close</button></form>
+    </div>
+  </dialog>
+
+  <script src="js/generator.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
