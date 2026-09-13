@@ -124,5 +124,5 @@
     return { solution, clues: generateClues(solution), board: scramble(solution) };
   }
 
-  global.Crosswap = { SIZE, MAX_SWAPS, MIN_SWAPS, isTilePos, createPuzzle };
+  global.Crosswap = { SIZE, MAX_SWAPS, MIN_SWAPS, isTilePos, createPuzzle, generateClues };
 })(window);

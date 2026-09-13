@@ -451,6 +451,10 @@
   const saved = storage.get(GAME_KEY);
   state = isValidGame(saved) ? saved : createGame();
   state.revealed = state.revealed || [];
+  // Games saved before clues always pointed at perpendicular tiles get fresh
+  // clues for the same solution, so progress on the board is kept.
+  const perpendicular = (c) => c.directions.length === 2 && /[LR]/.test(c.directions) && /[UD]/.test(c.directions);
+  if (!state.clues.every(perpendicular)) state.clues = NW.generateClues(state.solution);
   indexTiles();
   buildBoard();
   buildStars();
