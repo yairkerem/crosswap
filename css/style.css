@@ -13,7 +13,6 @@
   --correct-ink: #fff;
   --clue: #e0823d;
   --clue-ink: #20140a;
-  --clue-link: #f0b27e;
   --accent: #e0823d;
   --reveal: #8d99a3;
   color-scheme: light;
@@ -35,7 +34,6 @@
     --correct-ink: #fff;
     --clue: #ef9350;
     --clue-ink: #1b1206;
-    --clue-link: #8a5a33;
     --accent: #ef9350;
     --reveal: #55616b;
     color-scheme: dark;
@@ -211,18 +209,29 @@ main {
 
 /* ---------- Clues ---------- */
 
-/* A clue is a tag in a gap, joined by bars to the two tiles it adds up. */
+/* A clue is a tag in a gap with arrows pointing at the two tiles it adds up.
+   Each arrow is drawn pointing up across the whole (square) cell, then rotated. */
 .clue { z-index: 1; pointer-events: none; }
 
-.clue .link {
+.clue .arrow { position: absolute; inset: 0; }
+.arrow.R { transform: rotate(90deg); }
+.arrow.D { transform: rotate(180deg); }
+.arrow.L { transform: rotate(270deg); }
+
+.arrow::before,
+.arrow::after {
+  content: "";
   position: absolute;
-  background: var(--clue-link);
-  border-radius: 999px;
+  background: var(--clue);
 }
-.link.L { left: -6%; right: 50%; top: 44%; height: 12%; }
-.link.R { right: -6%; left: 50%; top: 44%; height: 12%; }
-.link.U { top: -6%; bottom: 50%; left: 44%; width: 12%; }
-.link.D { bottom: -6%; top: 50%; left: 44%; width: 12%; }
+.arrow::before { left: 46.5%; width: 7%; top: 14%; bottom: 50%; }
+.arrow::after {
+  left: 35%;
+  width: 30%;
+  top: 1%;
+  height: 19%;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
 
 .clue .tag {
   position: absolute;

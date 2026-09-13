@@ -220,9 +220,9 @@
       el.setAttribute('aria-label', `Clue: tiles ${names.join(' and ')} sum to ${clue.value}`);
       place(el, clue.y * SIZE + clue.x);
       for (const d of clue.directions) {
-        const link = document.createElement('span');
-        link.className = `link ${d}`;
-        el.appendChild(link);
+        const arrow = document.createElement('span');
+        arrow.className = `arrow ${d}`;
+        el.appendChild(arrow);
       }
       const tag = document.createElement('span');
       tag.className = 'tag';

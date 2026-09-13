@@ -2,8 +2,8 @@
 //
 // The board is a 7x7 lattice: a cell exists wherever its column or row is even,
 // leaving 9 gaps at (odd, odd). Rows/columns 0, 2, 4, 6 are full lines of 7 cells
-// and must each contain 1..7 exactly once. Gaps hold sum clues joined to two
-// adjacent cells.
+// and must each contain 1..7 exactly once. Gaps hold sum clues whose arrows point
+// at one horizontal and one vertical neighbour.
 (function (global) {
   'use strict';
 
@@ -70,13 +70,15 @@
     return grid;
   }
 
-  // One clue per gap, joined to two of its four neighbours.
+  // One clue per gap, pointing at two perpendicular neighbours: one to the
+  // left or right, and one above or below.
   function generateClues(solution) {
     const clues = [];
     for (const y of [1, 3, 5]) {
       for (const x of [1, 3, 5]) {
-        const picked = shuffle(Object.keys(DIRECTIONS)).slice(0, 2);
-        const directions = Object.keys(DIRECTIONS).filter((d) => picked.includes(d)).join('');
+        const across = Math.random() < 0.5 ? 'L' : 'R';
+        const upDown = Math.random() < 0.5 ? 'U' : 'D';
+        const directions = Object.keys(DIRECTIONS).filter((d) => d === across || d === upDown).join('');
         let value = 0;
         for (const d of directions) {
           const [dx, dy] = DIRECTIONS[d];
