@@ -55,6 +55,29 @@
       Array.isArray(g.solution) && Array.isArray(g.clues) && Array.isArray(g.moves);
   }
 
+  // Load the saved game, bringing saves from earlier versions up to date.
+  function loadGame() {
+    const saved = storage.get(GAME_KEY);
+    if (!isValidGame(saved)) return null;
+
+    // Older saves counted swaps down and ended in a loss at zero.
+    if (typeof saved.swapsUsed !== 'number') {
+      saved.swapsUsed = NW.MAX_SWAPS - (typeof saved.swapsLeft === 'number' ? saved.swapsLeft : NW.MAX_SWAPS);
+    }
+    if (saved.status === 'lost') {
+      if (saved.recorded) return null; // already finished and revealed
+      saved.status = 'playing';
+    }
+    delete saved.swapsLeft;
+    delete saved.recorded;
+    delete saved.revealed;
+
+    // Older clues could point at opposite tiles or share a tile; replace them
+    // with valid clues for the same solution so board progress is kept.
+    if (!NW.cluesValid(saved.clues)) saved.clues = NW.generateClues(saved.solution);
+    return saved;
+  }
+
   function loadStats() {
     const s = Object.assign({ played: 0, won: 0, streak: 0, best: 0 }, storage.get(STATS_KEY) || {});
     if (!Array.isArray(s.stars) || s.stars.length !== MAX_STARS + 1) s.stars = new Array(MAX_STARS + 1).fill(0);
@@ -68,7 +91,7 @@
       s.won++;
       s.streak++;
       s.best = Math.max(s.best, s.streak);
-      s.stars[Math.min(state.swapsLeft, MAX_STARS)]++;
+      s.stars[starsFor(state.swapsUsed)]++;
     } else {
       s.streak = 0;
     }
@@ -86,11 +109,9 @@
       solution: puzzle.solution,
       clues: puzzle.clues,
       tiles,
-      swapsLeft: NW.MAX_SWAPS,
-      status: 'playing', // 'playing' | 'won' | 'lost'
+      swapsUsed: 0,
+      status: 'playing', // 'playing' | 'won'
       moves: [],         // { a, b, t } — tile ids swapped and when
-      recorded: false,   // result written to stats (final, no more undo)
-      revealed: [],      // tile ids moved into place after a loss
     };
   }
 
@@ -99,13 +120,15 @@
     state.tiles.forEach((t, id) => { posToTile[t.p] = id; });
   }
 
+  const starsFor = (used) => Math.max(0, Math.min(NW.MAX_SWAPS - used, MAX_STARS));
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
   const isCorrect = (id) => state.tiles[id].v === state.solution[state.tiles[id].p];
   const isSolved = () => state.tiles.every((_, id) => isCorrect(id));
   const canMove = (id) => state.status === 'playing' && !isCorrect(id);
 
   // The most recent swap, if it's still inside the undo window.
   function undoableMove(now = Date.now()) {
-    if (state.recorded) return null;
+    if (state.status !== 'playing') return null;
     const m = state.moves[state.moves.length - 1];
     if (!m) return null;
     const age = now - m.t;
@@ -122,17 +145,13 @@
   function swap(a, b) {
     if (a === b || !canMove(a) || !canMove(b)) return;
     swapPositions(a, b);
-    state.swapsLeft--;
+    state.swapsUsed++;
     state.moves.push({ a, b, t: Date.now() });
     selected = -1;
 
     if (isSolved()) {
       state.status = 'won';
-      state.recorded = true;
       recordResult(true);
-    } else if (state.swapsLeft === 0) {
-      // Not final yet: the player can still undo during the window.
-      state.status = 'lost';
     }
     saveGame();
     render();
@@ -144,32 +163,8 @@
     if (!m) return;
     state.moves.pop();
     swapPositions(m.a, m.b);
-    state.swapsLeft++;
-    state.status = 'playing';
+    state.swapsUsed--;
     selected = -1;
-    saveGame();
-    render();
-  }
-
-  // Once the undo window after the final swap closes, record the loss and slide
-  // every misplaced tile into its solution position.
-  function finalizeLoss() {
-    state.recorded = true;
-    recordResult(false);
-
-    const wrong = state.tiles.map((_, id) => id).filter((id) => !isCorrect(id));
-    const openByValue = {};
-    for (const id of wrong) {
-      const pos = state.tiles[id].p;
-      (openByValue[state.solution[pos]] = openByValue[state.solution[pos]] || []).push(pos);
-    }
-    for (const id of wrong) {
-      const t = state.tiles[id];
-      t.p = openByValue[t.v].pop();
-    }
-    state.revealed = wrong;
-    selected = -1;
-    indexTiles();
     saveGame();
     render();
   }
@@ -183,12 +178,12 @@
     render();
   }
 
+  // Leaving a puzzle part-way through counts as unsolved.
   function requestNewGame() {
-    if (state.status === 'playing' && state.swapsLeft < NW.MAX_SWAPS &&
-        !window.confirm('Start a new puzzle? You will lose your progress on this one.')) {
-      return;
+    if (state.status === 'playing' && state.swapsUsed > 0) {
+      if (!window.confirm('Start a new puzzle? This one will count as unsolved.')) return;
+      recordResult(false);
     }
-    if (state.status === 'lost' && !state.recorded) recordResult(false);
     startNewGame();
   }
 
@@ -254,33 +249,33 @@
   }
 
   function render() {
-    const now = Date.now();
     state.tiles.forEach((t, id) => {
       const el = tileEls[id];
       const x = t.p % SIZE;
       const y = Math.floor(t.p / SIZE);
       const correct = isCorrect(id);
-      const revealed = state.revealed.includes(id);
       place(el, t.p);
       el.style.setProperty('--d', x + y);
-      el.classList.toggle('correct', correct && !revealed);
-      el.classList.toggle('revealed', revealed);
+      el.classList.toggle('correct', correct);
       el.classList.toggle('selected', id === selected);
       el.setAttribute('aria-disabled', String(!canMove(id)));
-      el.setAttribute('aria-label', `${t.v}, row ${y + 1}, column ${x + 1}${correct && !revealed ? ', correct' : ''}${id === selected ? ', selected' : ''}`);
+      el.setAttribute('aria-label', `${t.v}, row ${y + 1}, column ${x + 1}${correct ? ', correct' : ''}${id === selected ? ', selected' : ''}`);
     });
 
-    els.swapsLeft.textContent = state.swapsLeft;
-    els.swapsLabel.textContent = state.swapsLeft === 1 ? 'swap remaining' : 'swaps remaining';
-    const starCount = Math.min(state.swapsLeft, MAX_STARS);
+    // Past the limit the player keeps going; show how many extra swaps they've made.
+    const left = NW.MAX_SWAPS - state.swapsUsed;
+    els.swapsLeft.textContent = Math.max(left, 0);
+    els.swapsLabel.textContent = left === 1 ? 'swap remaining' : 'swaps remaining';
+    if (left < 0) els.swapsLabel.textContent += ` · ${-left} extra`;
+    const starCount = starsFor(state.swapsUsed);
     Array.from(els.stars.children).forEach((star, i) => star.classList.toggle('on', i < starCount));
 
-    renderUndo(now);
-    renderResult(now);
+    renderUndo(Date.now());
+    renderResult();
   }
 
   function renderUndo(now) {
-    const m = state.status === 'won' ? null : undoableMove(now);
+    const m = undoableMove(now);
     els.undo.disabled = !m;
     if (m) {
       const left = UNDO_WINDOW_MS - (now - m.t);
@@ -292,31 +287,21 @@
     }
   }
 
-  function renderResult(now) {
-    const { result, resultTitle, resultText, next } = els;
-    if (state.status === 'playing') {
+  function renderResult() {
+    const { result, resultTitle, resultText } = els;
+    if (state.status !== 'won') {
       result.hidden = true;
       return;
     }
+    const used = state.swapsUsed;
+    const stars = starsFor(used);
+    let text = `You used ${plural(used, 'swap')}`;
+    if (stars > 0) text += ` and earned ${'★'.repeat(stars)} ${plural(stars, 'star')}.`;
+    else if (used > NW.MAX_SWAPS) text += `: ${used - NW.MAX_SWAPS} over the ${NW.MAX_SWAPS}-swap limit, so no stars.`;
+    else text += ', so no stars this time.';
+    resultTitle.textContent = 'Solved!';
+    resultText.textContent = text;
     result.hidden = false;
-    if (state.status === 'won') {
-      const stars = Math.min(state.swapsLeft, MAX_STARS);
-      resultTitle.textContent = 'Solved!';
-      resultText.textContent = stars > 0
-        ? `${'★'.repeat(stars)}  ${stars} star${stars === 1 ? '' : 's'}: you had ${state.swapsLeft} swap${state.swapsLeft === 1 ? '' : 's'} left.`
-        : 'Solved on your last swap.';
-      next.hidden = false;
-    } else if (state.recorded) {
-      resultTitle.textContent = 'Out of swaps';
-      resultText.textContent = 'The grey tiles have moved to where they belong.';
-      next.hidden = false;
-    } else {
-      const m = undoableMove(now);
-      const secs = m ? Math.ceil((UNDO_WINDOW_MS - (now - m.t)) / 1000) : 0;
-      resultTitle.textContent = 'Out of swaps';
-      resultText.textContent = `Undo your last swap within ${secs}s to keep playing.`;
-      next.hidden = true;
-    }
   }
 
   function renderStats() {
@@ -334,11 +319,11 @@
     els.statsBody.innerHTML =
       '<div class="stat-grid">' +
       `<div><strong>${s.played}</strong><span>Played</span></div>` +
-      `<div><strong>${winPct}</strong><span>Win %</span></div>` +
+      `<div><strong>${winPct}</strong><span>Solved %</span></div>` +
       `<div><strong>${s.streak}</strong><span>Streak</span></div>` +
       `<div><strong>${s.best}</strong><span>Best streak</span></div>` +
       '</div>' +
-      `<div class="dist"><h3>Stars per win</h3>${rows.join('')}</div>`;
+      `<div class="dist"><h3>Stars per solve</h3>${rows.join('')}</div>`;
   }
 
   // ---------- Input ----------
@@ -448,27 +433,14 @@
 
   // ---------- Boot ----------
 
-  const saved = storage.get(GAME_KEY);
-  state = isValidGame(saved) ? saved : createGame();
-  state.revealed = state.revealed || [];
-  // Games saved before clues always pointed at perpendicular tiles get fresh
-  // clues for the same solution, so progress on the board is kept.
-  const perpendicular = (c) => c.directions.length === 2 && /[LR]/.test(c.directions) && /[UD]/.test(c.directions);
-  if (!state.clues.every(perpendicular)) state.clues = NW.generateClues(state.solution);
+  const saved = loadGame();
+  state = saved || createGame();
   indexTiles();
   buildBoard();
   buildStars();
   render();
   saveGame();
-  if (!saved) els.help.showModal();
+  if (!storage.get(STATS_KEY) && !saved) els.help.showModal();
 
-  setInterval(() => {
-    if (state.status === 'lost' && !state.recorded && !undoableMove()) {
-      finalizeLoss();
-      return;
-    }
-    const now = Date.now();
-    renderUndo(now);
-    if (state.status === 'lost') renderResult(now);
-  }, 100);
+  setInterval(() => renderUndo(Date.now()), 100);
 })();

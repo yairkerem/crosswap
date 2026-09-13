@@ -3,7 +3,7 @@
 // The board is a 7x7 lattice: a cell exists wherever its column or row is even,
 // leaving 9 gaps at (odd, odd). Rows/columns 0, 2, 4, 6 are full lines of 7 cells
 // and must each contain 1..7 exactly once. Gaps hold sum clues whose arrows point
-// at one horizontal and one vertical neighbour.
+// at one horizontal and one vertical neighbour, and no cell is pointed at twice.
 (function (global) {
   'use strict';
 
@@ -70,24 +70,51 @@
     return grid;
   }
 
-  // One clue per gap, pointing at two perpendicular neighbours: one to the
-  // left or right, and one above or below.
+  // Choices for the three gaps along one line: some `first`s followed by the
+  // rest `second`s (e.g. L L R). A gap pointing `second` (right/down) is never
+  // followed by one pointing `first` (left/up), so they never share a tile.
+  function lineChoices(first, second) {
+    const split = Math.floor(Math.random() * 4);
+    return [0, 1, 2].map((i) => (i < split ? first : second));
+  }
+
+  // One clue per gap, pointing at two perpendicular neighbours: one to the left
+  // or right, and one above or below. Horizontal and vertical targets are
+  // different cells, so choosing each gap row and gap column as above keeps
+  // every clue's tiles distinct.
   function generateClues(solution) {
+    const across = [0, 1, 2].map(() => lineChoices('L', 'R'));
+    const upDown = [0, 1, 2].map(() => lineChoices('U', 'D'));
     const clues = [];
-    for (const y of [1, 3, 5]) {
-      for (const x of [1, 3, 5]) {
-        const across = Math.random() < 0.5 ? 'L' : 'R';
-        const upDown = Math.random() < 0.5 ? 'U' : 'D';
-        const directions = Object.keys(DIRECTIONS).filter((d) => d === across || d === upDown).join('');
+    [1, 3, 5].forEach((y, row) => {
+      [1, 3, 5].forEach((x, col) => {
+        const picked = [across[row][col], upDown[col][row]];
+        const directions = Object.keys(DIRECTIONS).filter((d) => picked.includes(d)).join('');
         let value = 0;
         for (const d of directions) {
           const [dx, dy] = DIRECTIONS[d];
           value += solution[(y + dy) * SIZE + x + dx];
         }
         clues.push({ x, y, directions, value });
+      });
+    });
+    return clues;
+  }
+
+  // True when every clue points at one horizontal and one vertical neighbour
+  // and no two clues point at the same cell.
+  function cluesValid(clues) {
+    const targets = new Set();
+    for (const { x, y, directions } of clues) {
+      if (directions.length !== 2 || !/[LR]/.test(directions) || !/[UD]/.test(directions)) return false;
+      for (const d of directions) {
+        const [dx, dy] = DIRECTIONS[d];
+        const pos = (y + dy) * SIZE + x + dx;
+        if (targets.has(pos)) return false;
+        targets.add(pos);
       }
     }
-    return clues;
+    return true;
   }
 
   // Apply MIN_SWAPS disjoint swaps between tiles of different values. That leaves
@@ -124,5 +151,5 @@
     return { solution, clues: generateClues(solution), board: scramble(solution) };
   }
 
-  global.Crosswap = { SIZE, MAX_SWAPS, MIN_SWAPS, isTilePos, createPuzzle, generateClues };
+  global.Crosswap = { SIZE, MAX_SWAPS, MIN_SWAPS, isTilePos, createPuzzle, generateClues, cluesValid };
 })(window);

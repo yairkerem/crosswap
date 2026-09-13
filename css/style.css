@@ -14,7 +14,6 @@
   --clue: #e0823d;
   --clue-ink: #20140a;
   --accent: #e0823d;
-  --reveal: #8d99a3;
   color-scheme: light;
 }
 
@@ -35,7 +34,6 @@
     --clue: #ef9350;
     --clue-ink: #1b1206;
     --accent: #ef9350;
-    --reveal: #55616b;
     color-scheme: dark;
   }
 }
@@ -166,13 +164,6 @@ main {
   background: var(--correct);
   color: var(--correct-ink);
   box-shadow: inset 0 -0.6cqw 0 var(--correct-edge);
-}
-
-.tile.revealed { cursor: default; }
-.tile.revealed .face {
-  background: var(--reveal);
-  color: #fff;
-  box-shadow: inset 0 -0.6cqw 0 rgba(0, 0, 0, .18);
 }
 
 .tile.selected .face {
