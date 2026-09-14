@@ -4,7 +4,7 @@
   const NW = window.Crosswap;
   const SIZE = NW.SIZE;
   const MAX_STARS = NW.MAX_SWAPS - NW.MIN_SWAPS;
-  const UNDO_WINDOW_MS = 10000;
+  const UNDO_WINDOW_MS = 5000;
   const DRAG_THRESHOLD_PX = 6;
   const GAME_KEY = 'crosswap.game.v1';
   const STATS_KEY = 'crosswap.stats.v1';

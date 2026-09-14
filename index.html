@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Crosswap</title>
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Swap tiles until every row and column holds 1 to 7. Unlimited puzzles, with a 10-second undo.">
+  <meta name="description" content="Swap tiles until every row and column holds 1 to 7. Unlimited puzzles, with a 5-second undo.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔀</text></svg>">
-  <link rel="stylesheet" href="css/style.css?v=5">
+  <link rel="stylesheet" href="css/style.css?v=6">
 </head>
 <body>
   <header class="topbar">
@@ -51,7 +51,7 @@
         <li>Tiles turn <span class="chip">teal</span> when they're in the right place. Teal tiles are locked.</li>
         <li>Orange tags show the <strong>sum</strong> of the two tiles their arrows point to: one to the side and one above or below. No tile is pointed at twice. A tag showing 10 that points to a 4 and one unknown tile means the unknown is 6.</li>
         <li>Try to finish within <strong>20 swaps</strong>. Every puzzle can be solved in 15, and each swap you have left earns a ★. If you run out, keep going; you just won't earn stars.</li>
-        <li>Swapped the wrong tiles? Press <strong>Undo</strong> within <strong>10 seconds</strong> to reverse the swap and get it back. Shortcut: <kbd>Ctrl</kbd>+<kbd>Z</kbd> or <kbd>U</kbd>.</li>
+        <li>Swapped the wrong tiles? Press <strong>Undo</strong> within <strong>5 seconds</strong> to reverse the swap and get it back. Shortcut: <kbd>Ctrl</kbd>+<kbd>Z</kbd> or <kbd>U</kbd>.</li>
         <li>There's no daily limit, so play as many puzzles as you like.</li>
       </ul>
       <form method="dialog"><button class="btn primary" type="submit">Let's play</button></form>
@@ -66,8 +66,8 @@
     </div>
   </dialog>
 
-  <script src="js/solver.js?v=5"></script>
-  <script src="js/generator.js?v=5"></script>
-  <script src="js/game.js?v=5"></script>
+  <script src="js/solver.js?v=6"></script>
+  <script src="js/generator.js?v=6"></script>
+  <script src="js/game.js?v=6"></script>
 </body>
 </html>
