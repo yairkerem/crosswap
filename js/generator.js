@@ -4,9 +4,14 @@
 // leaving 9 gaps at (odd, odd). Rows/columns 0, 2, 4, 6 are full lines of 7 cells
 // and must each contain 1..7 exactly once. Gaps hold sum clues whose arrows point
 // at one horizontal and one vertical neighbour, and no cell is pointed at twice.
+//
+// Every puzzle starts with the 12 inner line crossings in place, needs exactly
+// MIN_SWAPS swaps, and has exactly one solution given what the player can see
+// (checked with CrosswapSolver, which must be loaded first).
 (function (global) {
   'use strict';
 
+  const Solver = global.CrosswapSolver;
   const SIZE = 7;
   const MAX_SWAPS = 20;
   const MIN_SWAPS = 15;
@@ -19,10 +24,19 @@
     return x % 2 === 0 || y % 2 === 0;
   }
 
+  // Crossings of two full lines, except the four corners, start in place.
+  function isFixedPos(pos) {
+    const x = pos % SIZE;
+    const y = Math.floor(pos / SIZE);
+    const corner = (x === 0 || x === SIZE - 1) && (y === 0 || y === SIZE - 1);
+    return x % 2 === 0 && y % 2 === 0 && !corner;
+  }
+
   const TILE_POSITIONS = [];
   for (let pos = 0; pos < SIZE * SIZE; pos++) {
     if (isTilePos(pos)) TILE_POSITIONS.push(pos);
   }
+  const SCRAMBLE_POSITIONS = TILE_POSITIONS.filter((pos) => !isFixedPos(pos));
 
   function shuffle(items) {
     const a = items.slice();
@@ -117,39 +131,49 @@
     return true;
   }
 
-  // Apply MIN_SWAPS disjoint swaps between tiles of different values. That leaves
-  // exactly 2 * MIN_SWAPS misplaced tiles, and since a swap fixes at most two
-  // tiles, the puzzle needs exactly MIN_SWAPS swaps to solve.
+  // Scramble the non-fixed tiles. Usually all of them move, sometimes one or two
+  // stay put. The moving tiles are split into cycles, each holding distinct
+  // values, and every tile takes the value of the next tile in its cycle. A cycle
+  // of n tiles takes n - 1 swaps, so the lengths are chosen to total MIN_SWAPS
+  // (mostly pairs plus a few longer cycles). Repeated values in different cycles
+  // can open shortcuts, so the exact minimum is checked before accepting.
   function scramble(solution) {
     for (;;) {
-      const order = shuffle(TILE_POSITIONS);
-      const used = new Set();
-      const pairs = [];
-      for (let i = 0; i < order.length && pairs.length < MIN_SWAPS; i++) {
-        const a = order[i];
-        if (used.has(a)) continue;
-        for (let j = i + 1; j < order.length; j++) {
-          const b = order[j];
-          if (!used.has(b) && solution[a] !== solution[b]) {
-            used.add(a);
-            used.add(b);
-            pairs.push([a, b]);
-            break;
-          }
+      const stay = [0, 0, 1, 2][Math.floor(Math.random() * 4)];
+      const moving = shuffle(SCRAMBLE_POSITIONS).slice(stay);
+      const cycleCount = moving.length - MIN_SWAPS;
+      const lengths = new Array(cycleCount).fill(2);
+      for (let extra = moving.length - 2 * cycleCount; extra > 0; extra--) {
+        lengths[Math.floor(Math.random() * cycleCount)]++;
+      }
+
+      const board = solution.slice();
+      let offset = 0;
+      let valid = true;
+      for (const length of lengths) {
+        const cycle = moving.slice(offset, offset + length);
+        offset += length;
+        if (new Set(cycle.map((pos) => solution[pos])).size !== length) {
+          valid = false;
+          break;
         }
+        cycle.forEach((pos, i) => { board[pos] = solution[cycle[(i + 1) % length]]; });
       }
-      if (pairs.length === MIN_SWAPS) {
-        const board = solution.slice();
-        for (const [a, b] of pairs) [board[a], board[b]] = [board[b], board[a]];
-        return board;
-      }
+      if (valid && Solver.minSwaps(board, solution) === MIN_SWAPS) return board;
     }
   }
 
   function createPuzzle() {
-    const solution = generateSolution();
-    return { solution, clues: generateClues(solution), board: scramble(solution) };
+    for (;;) {
+      const solution = generateSolution();
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const clues = generateClues(solution);
+        const board = scramble(solution);
+        const { count, exhausted } = Solver.countSolutions(board, solution, clues);
+        if (count === 1 && !exhausted) return { solution, clues, board };
+      }
+    }
   }
 
-  global.Crosswap = { SIZE, MAX_SWAPS, MIN_SWAPS, isTilePos, createPuzzle, generateClues, cluesValid };
+  global.Crosswap = { SIZE, MAX_SWAPS, MIN_SWAPS, isTilePos, isFixedPos, createPuzzle, generateClues, cluesValid };
 })(window);
