@@ -8,6 +8,8 @@
   const DRAG_THRESHOLD_PX = 6;
   const GAME_KEY = 'crosswap.game.v1';
   const STATS_KEY = 'crosswap.stats.v1';
+  const SETTINGS_KEY = 'crosswap.settings.v1';
+  const PALETTES = ['default', 'red-green', 'blue-yellow', 'high-contrast'];
   const DIRECTION_NAMES = { L: 'left', U: 'up', R: 'right', D: 'down' };
 
   const $ = (id) => document.getElementById(id);
@@ -27,8 +29,11 @@
     help: $('help'),
     stats: $('stats'),
     statsBody: $('stats-body'),
+    settings: $('settings'),
+    palettes: $('palettes'),
     btnHelp: $('btn-help'),
     btnStats: $('btn-stats'),
+    btnSettings: $('btn-settings'),
   };
 
   let state = null;
@@ -427,11 +432,37 @@
     renderStats();
     els.stats.showModal();
   });
-  for (const dialog of [els.help, els.stats]) {
+  els.btnSettings.addEventListener('click', () => {
+    const current = loadSettings().palette;
+    els.palettes.querySelectorAll('input[name="palette"]').forEach((input) => {
+      input.checked = input.value === current;
+    });
+    els.settings.showModal();
+  });
+  els.palettes.addEventListener('change', (e) => {
+    if (e.target.name !== 'palette') return;
+    applyPalette(e.target.value);
+    storage.set(SETTINGS_KEY, Object.assign(loadSettings(), { palette: e.target.value }));
+  });
+  for (const dialog of [els.help, els.stats, els.settings]) {
     dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
   }
 
+  // ---------- Settings ----------
+
+  function loadSettings() {
+    const s = storage.get(SETTINGS_KEY) || {};
+    return { palette: PALETTES.includes(s.palette) ? s.palette : 'default' };
+  }
+
+  // Colour schemes are CSS variable sets keyed by data-palette on <html>.
+  function applyPalette(palette) {
+    document.documentElement.dataset.palette = PALETTES.includes(palette) ? palette : 'default';
+  }
+
   // ---------- Boot ----------
+
+  applyPalette(loadSettings().palette);
 
   const saved = loadGame();
   state = saved || createGame();

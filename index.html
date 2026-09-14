@@ -7,15 +7,29 @@
   <meta name="robots" content="noindex, nofollow">
   <meta name="description" content="Swap tiles until every row and column holds 1 to 7. Unlimited puzzles, with a 5-second undo.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔀</text></svg>">
-  <link rel="stylesheet" href="css/style.css?v=6">
+  <script>
+    // Apply the saved colour scheme before the page paints.
+    try {
+      var palette = (JSON.parse(localStorage.getItem('crosswap.settings.v1')) || {}).palette;
+      document.documentElement.dataset.palette = palette || 'default';
+    } catch (e) { /* storage unavailable */ }
+  </script>
+  <link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
   <header class="topbar">
-    <button class="icon-btn" id="btn-help" type="button" aria-label="How to play">?</button>
+    <div class="topbar-side">
+      <button class="icon-btn" id="btn-help" type="button" aria-label="How to play">?</button>
+    </div>
     <h1>Crosswap</h1>
-    <button class="icon-btn" id="btn-stats" type="button" aria-label="Statistics">
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 13h3v7H4zm6.5-9h3v16h-3zM17 9h3v11h-3z"/></svg>
-    </button>
+    <div class="topbar-side end">
+      <button class="icon-btn" id="btn-settings" type="button" aria-label="Colour settings">
+        <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.47.47 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.47.47 0 0 0-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-stats" type="button" aria-label="Statistics">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 13h3v7H4zm6.5-9h3v16h-3zM17 9h3v11h-3z"/></svg>
+      </button>
+    </div>
   </header>
 
   <main>
@@ -48,10 +62,11 @@
       <p>Swap tiles until every <strong>full row and column</strong> contains the numbers <strong>1 to 7</strong>, each exactly once.</p>
       <ul>
         <li>Drag a tile onto another to swap them, or tap one and then another.</li>
-        <li>Tiles turn <span class="chip">teal</span> when they're in the right place. Teal tiles are locked.</li>
-        <li>Orange tags show the <strong>sum</strong> of the two tiles their arrows point to: one to the side and one above or below. No tile is pointed at twice. A tag showing 10 that points to a 4 and one unknown tile means the unknown is 6.</li>
+        <li>Tiles turn <span class="chip">this colour</span> when they're in the right place, and are then locked.</li>
+        <li><span class="chip clue-chip">Tags</span> in the gaps show the <strong>sum</strong> of the two tiles their arrows point to: one to the side and one above or below. No tile is pointed at twice. A tag showing 10 that points to a 4 and one unknown tile means the unknown is 6.</li>
         <li>Try to finish within <strong>20 swaps</strong>. Every puzzle can be solved in 15, and each swap you have left earns a ★. If you run out, keep going; you just won't earn stars.</li>
         <li>Swapped the wrong tiles? Press <strong>Undo</strong> within <strong>5 seconds</strong> to reverse the swap and get it back. Shortcut: <kbd>Ctrl</kbd>+<kbd>Z</kbd> or <kbd>U</kbd>.</li>
+        <li>Prefer different colours? The <strong>settings</strong> button has other schemes, including ones for colour blindness.</li>
         <li>There's no daily limit, so play as many puzzles as you like.</li>
       </ul>
       <form method="dialog"><button class="btn primary" type="submit">Let's play</button></form>
@@ -66,8 +81,39 @@
     </div>
   </dialog>
 
-  <script src="js/solver.js?v=6"></script>
-  <script src="js/generator.js?v=6"></script>
-  <script src="js/game.js?v=6"></script>
+  <dialog id="settings" aria-labelledby="settings-title">
+    <div class="dialog-body">
+      <h2 id="settings-title">Colours</h2>
+      <p class="dialog-intro">Choose how correct tiles and clues are coloured.</p>
+      <fieldset class="palettes" id="palettes">
+        <legend class="sr-only">Colour scheme</legend>
+        <label class="palette" data-palette="default">
+          <input type="radio" name="palette" value="default">
+          <span class="swatches" aria-hidden="true"><span class="swatch-tile">4</span><span class="swatch-clue">9</span></span>
+          <span class="palette-text"><strong>Default</strong><span>Teal and orange</span></span>
+        </label>
+        <label class="palette" data-palette="red-green">
+          <input type="radio" name="palette" value="red-green">
+          <span class="swatches" aria-hidden="true"><span class="swatch-tile">4</span><span class="swatch-clue">9</span></span>
+          <span class="palette-text"><strong>Red–green friendly</strong><span>For protanopia and deuteranopia</span></span>
+        </label>
+        <label class="palette" data-palette="blue-yellow">
+          <input type="radio" name="palette" value="blue-yellow">
+          <span class="swatches" aria-hidden="true"><span class="swatch-tile">4</span><span class="swatch-clue">9</span></span>
+          <span class="palette-text"><strong>Blue–yellow friendly</strong><span>For tritanopia</span></span>
+        </label>
+        <label class="palette" data-palette="high-contrast">
+          <input type="radio" name="palette" value="high-contrast">
+          <span class="swatches" aria-hidden="true"><span class="swatch-tile">4</span><span class="swatch-clue">9</span></span>
+          <span class="palette-text"><strong>High contrast</strong><span>Light against dark, for no colour vision or low vision</span></span>
+        </label>
+      </fieldset>
+      <form method="dialog"><button class="btn primary" type="submit">Done</button></form>
+    </div>
+  </dialog>
+
+  <script src="js/solver.js?v=7"></script>
+  <script src="js/generator.js?v=7"></script>
+  <script src="js/game.js?v=7"></script>
 </body>
 </html>

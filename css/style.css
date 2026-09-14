@@ -38,6 +38,47 @@
   }
 }
 
+/* ---------- Colour schemes ----------
+   Set on <html> for the game, and on each option in the settings dialog so its
+   preview shows that scheme. Pairs were checked with simulated protanopia,
+   deuteranopia, tritanopia and achromatopsia. */
+
+[data-palette="default"] {
+  --correct: #2a8c82; --correct-edge: #1f6d65; --correct-ink: #fff;
+  --clue: #e0823d; --clue-ink: #20140a; --accent: #e0823d;
+}
+[data-palette="red-green"] {
+  --correct: #1b4f7a; --correct-edge: #12385a; --correct-ink: #fff;
+  --clue: #e0823d; --clue-ink: #20140a; --accent: #e0823d;
+}
+[data-palette="blue-yellow"] {
+  --correct: #3d3a8c; --correct-edge: #2c2a66; --correct-ink: #fff;
+  --clue: #e8455a; --clue-ink: #1b1206; --accent: #e8455a;
+}
+[data-palette="high-contrast"] {
+  --correct: #1f2a33; --correct-edge: #0b1014; --correct-ink: #fff;
+  --clue: #c98a2e; --clue-ink: #1b1206; --accent: #c98a2e;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-palette="default"] {
+    --correct: #2f9a8f; --correct-edge: #1f6d65; --correct-ink: #fff;
+    --clue: #ef9350; --clue-ink: #1b1206; --accent: #ef9350;
+  }
+  [data-palette="red-green"] {
+    --correct: #1f6fb2; --correct-edge: #17568a; --correct-ink: #fff;
+    --clue: #ef9350; --clue-ink: #1b1206; --accent: #ef9350;
+  }
+  [data-palette="blue-yellow"] {
+    --correct: #26a69a; --correct-edge: #1b7a71; --correct-ink: #10201e;
+    --clue: #e8455a; --clue-ink: #1b1206; --accent: #e8455a;
+  }
+  [data-palette="high-contrast"] {
+    --correct: #ffffff; --correct-edge: #cfd8dc; --correct-ink: #1f2a33;
+    --clue: #c98a2e; --clue-ink: #1b1206; --accent: #c98a2e;
+  }
+}
+
 * { box-sizing: border-box; }
 
 [hidden] { display: none !important; }
@@ -54,14 +95,27 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---------- Header ---------- */
 
 .topbar {
   width: 100%;
   max-width: 560px;
   display: grid;
-  grid-template-columns: 44px 1fr 44px;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
+  gap: 8px;
   padding: 10px 12px;
   border-bottom: 1px solid var(--line);
 }
@@ -73,6 +127,9 @@ body {
   font-weight: 800;
   letter-spacing: .01em;
 }
+
+.topbar-side { display: flex; gap: 6px; }
+.topbar-side.end { justify-content: flex-end; }
 
 .icon-btn {
   width: 40px;
@@ -326,6 +383,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
 .dialog-body ul { padding-left: 1.1em; line-height: 1.5; }
 .dialog-body li + li { margin-top: 6px; }
 .dialog-body form { display: flex; justify-content: center; margin-top: 16px; }
+.dialog-intro { margin: 0 0 14px; color: var(--muted); }
 
 .chip {
   display: inline-block;
@@ -335,6 +393,7 @@ dialog::backdrop { background: rgba(10, 16, 22, .45); }
   color: var(--correct-ink);
   font-weight: 700;
 }
+.chip.clue-chip { background: var(--clue); color: var(--clue-ink); }
 
 kbd {
   font: inherit;
@@ -367,3 +426,55 @@ kbd {
   font-variant-numeric: tabular-nums;
 }
 .dist-bar.best { background: var(--accent); color: var(--clue-ink); }
+
+/* ---------- Settings ---------- */
+
+.palettes {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.palette {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.palette:has(input:checked) { border-color: var(--ink); }
+.palette:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+.palette input { margin: 0; accent-color: var(--ink); }
+
+.swatches { display: flex; align-items: center; gap: 6px; }
+.swatch-tile,
+.swatch-clue {
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.swatch-tile {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--correct);
+  color: var(--correct-ink);
+  box-shadow: inset 0 -3px 0 var(--correct-edge);
+}
+.swatch-clue {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--clue);
+  color: var(--clue-ink);
+  font-size: .8rem;
+}
+
+.palette-text { display: grid; gap: 1px; }
+.palette-text span { color: var(--muted); font-size: .85rem; }
