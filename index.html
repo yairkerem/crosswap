@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Crosswap</title>
   <meta name="robots" content="noindex, nofollow">
-  <meta name="description" content="Swap tiles until every row and column holds 1 to 7. Unlimited puzzles, with a 5-second undo.">
+  <meta name="description" content="Swap tiles until every row and column holds 1 to 7. Unlimited puzzles, with a 2-second undo.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔀</text></svg>">
   <script>
     // Apply the saved colour scheme before the page paints.
@@ -14,7 +14,7 @@
       document.documentElement.dataset.palette = palette || 'default';
     } catch (e) { /* storage unavailable */ }
   </script>
-  <link rel="stylesheet" href="css/style.css?v=7">
+  <link rel="stylesheet" href="css/style.css?v=8">
 </head>
 <body>
   <header class="topbar">
@@ -65,7 +65,7 @@
         <li>Tiles turn <span class="chip">this colour</span> when they're in the right place, and are then locked.</li>
         <li><span class="chip clue-chip">Tags</span> in the gaps show the <strong>sum</strong> of the two tiles their arrows point to: one to the side and one above or below. No tile is pointed at twice. A tag showing 10 that points to a 4 and one unknown tile means the unknown is 6.</li>
         <li>Try to finish within <strong>20 swaps</strong>. Every puzzle can be solved in 15, and each swap you have left earns a ★. If you run out, keep going; you just won't earn stars.</li>
-        <li>Swapped the wrong tiles? Press <strong>Undo</strong> within <strong>5 seconds</strong> to reverse the swap and get it back. Shortcut: <kbd>Ctrl</kbd>+<kbd>Z</kbd> or <kbd>U</kbd>.</li>
+        <li>Swapped the wrong tiles? Press <strong>Undo</strong> within <strong>2 seconds</strong> to reverse the swap and get it back. Shortcut: <kbd>Ctrl</kbd>+<kbd>Z</kbd> or <kbd>U</kbd>.</li>
         <li>Prefer different colours? The <strong>settings</strong> button has other schemes, including ones for colour blindness.</li>
         <li>There's no daily limit, so play as many puzzles as you like.</li>
       </ul>
@@ -112,8 +112,8 @@
     </div>
   </dialog>
 
-  <script src="js/solver.js?v=7"></script>
-  <script src="js/generator.js?v=7"></script>
-  <script src="js/game.js?v=7"></script>
+  <script src="js/solver.js?v=8"></script>
+  <script src="js/generator.js?v=8"></script>
+  <script src="js/game.js?v=8"></script>
 </body>
 </html>
